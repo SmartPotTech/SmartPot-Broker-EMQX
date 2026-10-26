@@ -1,0 +1,26 @@
+name: Broker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Build and Validate Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Build the Docker image
+        run: docker build -t smartpot-broker-emqx:ci .
+
+      - name: Run security smoke test
+        run: sh tests/smoke.sh smartpot-broker-emqx:ci
