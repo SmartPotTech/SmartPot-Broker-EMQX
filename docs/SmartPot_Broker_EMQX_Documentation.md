@@ -52,6 +52,25 @@ solo permite los tópicos de su propio cultivo y niega el resto. La configuraci�
 `deny_action = disconnect`, así que una operación fuera del ACL corta la conexión. La cuenta de servicio es superusuario
 y no pasa por autorización.
 
+### 3.3 Desacoplamiento en la API (puertos y adaptadores)
+
+La API no depende de EMQX: depende de **puertos** (interfaces del dominio) y EMQX es un **adaptador** intercambiable,
+igual que PostgreSQL es el adaptador del puerto de datos. Es el principio de inversión de dependencias (la D de SOLID)
+de la arquitectura hexagonal. Ningún paquete de dominio importa el adaptador del broker; el broker (y sus detalles de
+EMQX) solo se conocen en el adaptador y se cablean en el arranque (`cmd/api`).
+
+| Puerto (dominio) | Qué abstrae | Adaptador EMQX |
+|---|---|---|
+| `commands.Publisher` | Enviar una orden a un cultivo | Cliente MQTT (publica en `commands`) |
+| `crops.DeviceProvisioner` | Alta/rotación/baja de la credencial del dispositivo | Corta sesiones por la API REST de EMQX (crear es no-op: la clave vive en la base) |
+| `mqtt.DeviceVerifier` | Verificar la credencial de un dispositivo | Lo implementa el servicio de cultivos (descifra y compara contra la base) |
+
+Para cambiar de broker (o de transporte) el día de mañana basta con escribir un adaptador nuevo que cumpla esos puertos
+y cablearlo en el arranque; el dominio y los contratos no cambian. La configuración del broker vive en variables de
+entorno genéricas (`MQTT_BROKER_URI`, `MQTT_ADMIN_*`, `MQTT_AUTHN_TOKEN`, `MQTT_BROKER_API_*`), al mismo nivel que las de
+la base de datos o la caché, de modo que apuntar a otro broker es cuestión de configuración y de un adaptador, no de
+tocar la lógica de negocio.
+
 ## 4. Listeners
 
 | Puerto | Protocolo | Uso |
