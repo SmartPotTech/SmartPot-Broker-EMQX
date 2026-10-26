@@ -1,0 +1,121 @@
+# Configuración de EMQX para SmartPot. El entrypoint la renderiza en /opt/emqx/etc/emqx.conf
+# sustituyendo los marcadores @...@ y añade el listener TLS (8883) solo si hay certificados.
+#
+# Modelo: EMQX solo habla con la API.
+#   - Autenticación del servicio (la API) -> base interna de EMQX (un superusuario sembrado del bootstrap).
+#   - Autenticación de los dispositivos  -> HTTP a la API, que verifica la clave contra la base y devuelve
+#     el permiso y un ACL acotado al cultivo (campo `acl`, EMQX 5.8+).
+#   - Autorización -> sin fuentes por dispositivo: se confía en el ACL que adjunta la autenticación,
+#     con `no_match = deny`. El superusuario (la API) no pasa por autorización.
+
+node {
+  name = "emqx@127.0.0.1"
+  cookie = "@NODE_COOKIE@"
+  data_dir = "/opt/emqx/data"
+}
+
+cluster {
+  discovery_strategy = manual
+}
+
+log {
+  console {
+    enable = true
+    level = @LOG_LEVEL@
+  }
+}
+
+# MQTT: solo se usan QoS 0 y 1; se permite retención (el estado del dispositivo es retenido).
+mqtt {
+  max_packet_size = 64KB
+  max_qos_allowed = 1
+  retain_available = true
+  max_inflight = 20
+  keepalive_multiplier = 1.5
+}
+
+retainer {
+  enable = true
+}
+
+# Listener interno: solo lo usa la API (y el simulador) dentro de la red de Docker.
+listeners.tcp.default {
+  bind = "0.0.0.0:1883"
+  max_connections = 1024
+}
+
+# WebSocket: Nginx lo publica como wss://mqtt.smartpot.app/mqtt.
+listeners.ws.default {
+  bind = "0.0.0.0:9001"
+  max_connections = 1024
+  websocket {
+    mqtt_path = "/mqtt"
+  }
+}
+
+# No se usa WebSocket sobre TLS directo: el cifrado del WebSocket lo termina Nginx.
+listeners.wss.default {
+  enable = false
+}
+
+# El listener TLS (8883) lo añade el entrypoint cuando hay certificados en el volumen.
+@TLS_LISTENER@
+
+# Cadena de autenticación: primero la base interna (la cuenta de servicio de la API,
+# sembrada como superusuario), luego HTTP a la API para los dispositivos.
+authentication = [
+  {
+    mechanism = password_based
+    backend = built_in_database
+    user_id_type = username
+    password_hash_algorithm {
+      name = bcrypt
+      salt_rounds = 10
+    }
+    bootstrap_file = "/opt/emqx/data/smartpot/admin-bootstrap.csv"
+    bootstrap_type = plain
+  },
+  {
+    mechanism = password_based
+    backend = http
+    method = post
+    url = "@AUTHN_URL@"
+    connect_timeout = 5s
+    request_timeout = 5s
+    enable_pipelining = 100
+    headers {
+      "content-type" = "application/json"
+      "x-smartpot-broker-token" = "@AUTHN_TOKEN@"
+    }
+    body {
+      username = "${username}"
+      password = "${password}"
+      clientid = "${clientid}"
+    }
+  }
+]
+
+# Autorización: sin fuentes por dispositivo. Cada dispositivo trae su ACL desde la autenticación
+# (acotado a smartpot/v1/<cultivo>/...); lo que no coincide se rechaza y se corta la conexión.
+authorization {
+  no_match = deny
+  deny_action = disconnect
+  cache {
+    enable = true
+  }
+  sources = []
+}
+
+# Panel y API REST en 18083 (solo red interna; no se publica). La API usa una clave de API
+# (no el usuario del panel) para desconectar sesiones al rotar o borrar la clave de un cultivo.
+dashboard {
+  listeners.http {
+    bind = "0.0.0.0:18083"
+  }
+  default_username = "smartpot-admin"
+  default_password = "@DASHBOARD_PASSWORD@"
+}
+
+api_key {
+  bootstrap_file = "/opt/emqx/data/smartpot/api-key.bootstrap"
+}
