@@ -1,0 +1,11 @@
+.git
+.github
+.idea
+tests
+*.md
+compose.yaml
+.env
+.env.*
+scripts
+docs
+certs
