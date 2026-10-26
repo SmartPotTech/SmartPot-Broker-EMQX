@@ -21,9 +21,9 @@ cleanup() {
   docker rm -f "$BROKER" "$AUTHN" >/dev/null 2>&1 || true
   docker network rm "$NET" >/dev/null 2>&1 || true
   docker volume rm smartpot-emqx-smoke-data >/dev/null 2>&1 || true
-  rm -rf "$WORK"
 }
-trap cleanup EXIT
+# El borrado de $WORK va solo en el trap: llamar a cleanup al inicio no debe borrar el directorio recién creado.
+trap 'cleanup; rm -rf "$WORK"' EXIT
 cleanup
 
 # CA y certificado de servidor desechables para probar el listener TLS.
