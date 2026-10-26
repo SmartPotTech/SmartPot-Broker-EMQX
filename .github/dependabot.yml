@@ -6,6 +6,10 @@ updates:
       interval: "weekly"
     commit-message:
       prefix: "deps"
+    ignore:
+      # EMQX 5.8.x es la última versión open source (Apache-2.0); 5.9+ pasó a BSL. No seguir el major a 6.x.
+      - dependency-name: "emqx/emqx"
+        update-types: [ "version-update:semver-major" ]
 
   - package-ecosystem: "github-actions"
     directory: "/"
