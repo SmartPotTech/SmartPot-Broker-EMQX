@@ -1,6 +1,6 @@
 # Última versión 5.8 de EMQX (open source, Apache-2.0); 5.9+ cambió a BSL. 5.8 ya trae el campo `acl`
 # en la respuesta de autenticación HTTP, que es lo que usa SmartPot para acotar cada dispositivo a su cultivo.
-FROM emqx/emqx:5.8.8
+FROM emqx/emqx:6.3.2
 
 LABEL org.opencontainers.image.title="SmartPot Broker EMQX" \
       org.opencontainers.image.description="Broker MQTT de SmartPot sobre EMQX: la API autentica cada dispositivo y lo acota a su cultivo" \
