@@ -1,0 +1,28 @@
+name: smartpot-broker-emqx
+
+services:
+  broker-smartpot:
+    build: .
+    image: ghcr.io/smartpottech/smartpot-broker-emqx:latest
+    container_name: smartpot-broker-emqx
+    restart: unless-stopped
+    # EMQX gestiona un directorio de datos mutable (mnesia), así que no puede ser read_only;
+    # se endurece con usuario sin privilegios, sin capacidades y sin escalada de privilegios.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:1883:1883"
+      - "127.0.0.1:8883:8883"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - broker_data:/opt/emqx/data
+      - ./certs:/opt/emqx/etc/certs:ro
+    tmpfs:
+      - /tmp
+
+volumes:
+  broker_data:
