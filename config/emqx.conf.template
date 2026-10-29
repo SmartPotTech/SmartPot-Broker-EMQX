@@ -89,6 +89,7 @@ authentication = [
     connect_timeout = 5s
     request_timeout = 5s
     enable_pipelining = 100
+    pool_size = 16
     headers {
       "content-type" = "application/json"
       "x-smartpot-broker-token" = "@AUTHN_TOKEN@"
@@ -108,6 +109,8 @@ authorization {
   deny_action = disconnect
   cache {
     enable = true
+    max_size = 1024
+    ttl = 5m
   }
   sources = []
 }
