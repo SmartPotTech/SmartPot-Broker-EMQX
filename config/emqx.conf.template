@@ -30,24 +30,30 @@ mqtt {
   max_packet_size = 64KB
   max_qos_allowed = 1
   retain_available = true
-  max_inflight = 20
+  max_inflight = 32
+  max_awaiting_rel = 100
+  await_rel_timeout = 300s
   keepalive_multiplier = 1.5
+  retry_interval = 20s
 }
 
 retainer {
   enable = true
+  max_payload_size = 64KB
 }
 
 # Listener interno: solo lo usa la API (y el simulador) dentro de la red de Docker.
 listeners.tcp.default {
   bind = "0.0.0.0:1883"
-  max_connections = 1024
+  max_connections = 2048
+  max_conn_rate = 100
 }
 
 # WebSocket: Nginx lo publica como wss://mqtt.smartpot.app/mqtt.
 listeners.ws.default {
   bind = "0.0.0.0:9001"
-  max_connections = 1024
+  max_connections = 2048
+  max_conn_rate = 100
   websocket {
     mqtt_path = "/mqtt"
   }
