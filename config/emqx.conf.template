@@ -35,6 +35,7 @@ mqtt {
   await_rel_timeout = 300s
   keepalive_multiplier = 1.5
   retry_interval = 20s
+  max_topic_alias = 64
 }
 
 retainer {
