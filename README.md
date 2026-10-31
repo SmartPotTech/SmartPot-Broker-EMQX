@@ -154,6 +154,18 @@ El broker es el único punto de contacto de los dispositivos con la plataforma. 
 [documentación técnica](https://github.com/SmartPotTech/.github/blob/main/docs/SmartPot_Technical_Documentation.md)
 detalla el contrato MQTT, los permisos por cultivo y la red de producción.
 
+## Hoja de Ruta Industrial: MQTT v5, mTLS X.509 y Stream gRPC ExHook
+
+Como parte del **Plan Maestro de Maximización del Stack B (demo-beta)**, `SmartPot-Broker-EMQX` evoluciona hacia una arquitectura ciberfísica de ultra-bajo consumo y seguridad de hardware:
+
+1. **Protocolo MQTT v5.0 y Topic Aliases**:
+   - `topic_alias_maximum = 64` obligatorio, reduciendo los tópicos extensos de telemetría a un identificador entero de 2 bytes tras el paquete inicial.
+2. **Seguridad Criptográfica mTLS X.509**:
+   - Autenticación mutua en el handshake TLS basada en certificados cliente Ed25519 / ECDSA P-256 con TLS Session Resumption (Session Tickets < 15 ms).
+   - Regla ACL criptográfica estricta que exige `peer_cert_cn == clientid`, impidiendo la suplantación de identidad entre macetas.
+3. **Integración gRPC ExHook Persistente**:
+   - Sustitución de los webhooks HTTP por un canal gRPC persistente multiplexado sobre HTTP/2 directo hacia `SmartPot-API-Go:9090` para telemetría binaria y control de sesiones.
+
 ## Licencia
 
 Este proyecto está bajo la licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles.
